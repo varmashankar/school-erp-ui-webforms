@@ -1,49 +1,25 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
 public partial class Dashboard_admin_feedefinition : System.Web.UI.Page
 {
-    // Dummy Data Structures
     public class FeeDefinition
     {
         public int FeeDefinitionID { get; set; }
         public string FeeName { get; set; }
-        public string Description { get; set; }
+        public string Code { get; set; }
+        public string Frequency { get; set; }
         public decimal DefaultAmount { get; set; }
-        public string ApplicableClassID { get; set; } // e.g., "G1A", or empty for all classes
-        public string ApplicableClass { get; set; } // Display name for GridView
-        public DateTime DefaultDueDate { get; set; }
         public bool IsActive { get; set; }
     }
 
-    public class ClassInfo // To populate ddlApplicableClass dynamically if needed
-    {
-        public string ClassID { get; set; }
-        public string ClassName { get; set; }
-    }
-
-    // Simulate database data
-    private static List<FeeDefinition> _feeDefinitions = new List<FeeDefinition>
-    {
-        new FeeDefinition { FeeDefinitionID = 1, FeeName = "Tuition Fee", Description = "Annual tuition fee", DefaultAmount = 1000.00m, ApplicableClassID = "", ApplicableClass = "All Classes", DefaultDueDate = new DateTime(DateTime.Now.Year, 9, 1), IsActive = true },
-        new FeeDefinition { FeeDefinitionID = 2, FeeName = "Library Fee", Description = "Annual library usage fee", DefaultAmount = 50.00m, ApplicableClassID = "G1A", ApplicableClass = "Grade 1 - A", DefaultDueDate = new DateTime(DateTime.Now.Year, 9, 15), IsActive = true },
-        new FeeDefinition { FeeDefinitionID = 3, FeeName = "Exam Fee", Description = "Semester exam fee", DefaultAmount = 150.00m, ApplicableClassID = "G5A", ApplicableClass = "Grade 5 - A", DefaultDueDate = new DateTime(DateTime.Now.Year, 11, 1), IsActive = true },
-        new FeeDefinition { FeeDefinitionID = 4, FeeName = "Sports Fee", Description = "Annual sports club fee", DefaultAmount = 75.00m, ApplicableClassID = "", ApplicableClass = "All Classes", DefaultDueDate = new DateTime(DateTime.Now.Year, 9, 30), IsActive = false },
-    };
-
-    private static List<ClassInfo> _classes = new List<ClassInfo>
-    {
-        new ClassInfo { ClassID = "G1A", ClassName = "Grade 1 - A" },
-        new ClassInfo { ClassID = "G1B", ClassName = "Grade 1 - B" },
-        new ClassInfo { ClassID = "G5A", ClassName = "Grade 5 - A" },
-        new ClassInfo { ClassID = "G8A", ClassName = "Grade 8 - A" }
-    };
-
-    // ViewState to track if we are in edit mode
     private int EditingFeeDefinitionID
     {
         get { return ViewState["EditingFeeDefinitionID"] != null ? (int)ViewState["EditingFeeDefinitionID"] : 0; }
@@ -54,32 +30,82 @@ public partial class Dashboard_admin_feedefinition : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
-            PopulateStats();
-            PopulateClassesDropdown();
-            BindFeeDefinitionsGridView();
-            txtDefaultDueDate.Text = DateTime.Today.ToString("yyyy-MM-dd"); // Default due date
+            txtDefaultDueDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
+            RegisterAsyncTask(new PageAsyncTask(async () =>
+            {
+                await BindFeeDefinitionsGridViewAsync();
+                PopulateStatsFromCache();
+            }));
         }
     }
 
-    private void PopulateStats()
+    private async Task<List<FeeHeadApi>> FetchFeeHeadsAsync()
     {
-        litTotalFeeTypes.Text = _feeDefinitions.Count.ToString();
-        litFeeStructuresInUse.Text = _feeDefinitions.Count(f => f.IsActive).ToString();
-        litUpcomingDueDates.Text = _feeDefinitions.Count(f => f.IsActive && f.DefaultDueDate.Month == DateTime.Now.Month && f.DefaultDueDate.Day >= DateTime.Now.Day).ToString();
+        var filter = new FeeHeadFilterApi { deleted = false, status = null, id = null, pageNo = null };
+        var res = await ApiHelper.PostAsync("api/Fees/getFeeHeadList", filter, HttpContext.Current);
+        if (res == null || res.response_code != "200")
+            return null;
+
+        try
+        {
+            var json = JsonConvert.SerializeObject(res.obj);
+            return JsonConvert.DeserializeObject<List<FeeHeadApi>>(json);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
-    private void PopulateClassesDropdown()
+    private void CacheFeeHeads(List<FeeHeadApi> list)
     {
-        ddlApplicableClass.DataSource = _classes.OrderBy(c => c.ClassName);
-        ddlApplicableClass.DataTextField = "ClassName";
-        ddlApplicableClass.DataValueField = "ClassID";
-        ddlApplicableClass.DataBind();
-        ddlApplicableClass.Items.Insert(0, new ListItem("-- All Classes --", "")); // Add default "All Classes"
+        try
+        {
+            ViewState["feeHeadsCache"] = JsonConvert.SerializeObject(list ?? new List<FeeHeadApi>());
+        }
+        catch { }
     }
 
-    private void BindFeeDefinitionsGridView()
+    private List<FeeHeadApi> GetFeeHeadsFromCache()
     {
-        gvFeeDefinitions.DataSource = _feeDefinitions.OrderBy(f => f.FeeName).ToList();
+        try
+        {
+            var raw = ViewState["feeHeadsCache"] as string;
+            if (string.IsNullOrWhiteSpace(raw)) return new List<FeeHeadApi>();
+            return JsonConvert.DeserializeObject<List<FeeHeadApi>>(raw) ?? new List<FeeHeadApi>();
+        }
+        catch { return new List<FeeHeadApi>(); }
+    }
+
+    private void PopulateStatsFromCache()
+    {
+        var list = GetFeeHeadsFromCache();
+        litTotalFeeTypes.Text = list.Count.ToString(CultureInfo.InvariantCulture);
+        litFeeStructuresInUse.Text = list.Count(x => x.status.HasValue ? x.status.Value : true).ToString(CultureInfo.InvariantCulture);
+        litUpcomingDueDates.Text = "-";
+    }
+
+    private async Task BindFeeDefinitionsGridViewAsync()
+    {
+        var heads = await FetchFeeHeadsAsync();
+        if (heads == null) heads = new List<FeeHeadApi>();
+
+        CacheFeeHeads(heads);
+
+        var rows = heads
+            .OrderBy(x => x.name)
+            .Select(x => new FeeDefinition
+            {
+                FeeDefinitionID = x.id,
+                FeeName = x.name,
+                Code = x.code,
+                Frequency = x.frequency,
+                DefaultAmount = x.default_amount,
+                IsActive = x.status.HasValue ? x.status.Value : true
+            })
+            .ToList();
+
+        gvFeeDefinitions.DataSource = rows;
         gvFeeDefinitions.DataBind();
     }
 
@@ -87,51 +113,58 @@ public partial class Dashboard_admin_feedefinition : System.Web.UI.Page
     {
         if (!IsValid) return;
 
-        // Simulate getting a new ID
-        int newID = _feeDefinitions.Count > 0 ? _feeDefinitions.Max(f => f.FeeDefinitionID) + 1 : 1;
-
-        string applicableClassID = ddlApplicableClass.SelectedValue;
-        string applicableClassName = ddlApplicableClass.SelectedItem.Text;
-        if (string.IsNullOrEmpty(applicableClassID)) { applicableClassName = "All Classes"; }
-
-        _feeDefinitions.Add(new FeeDefinition
+        RegisterAsyncTask(new PageAsyncTask(async () =>
         {
-            FeeDefinitionID = newID,
-            FeeName = txtFeeName.Text.Trim(),
-            Description = txtFeeDescription.Text.Trim(),
-            DefaultAmount = decimal.Parse(txtDefaultAmount.Text),
-            ApplicableClassID = applicableClassID,
-            ApplicableClass = applicableClassName,
-            DefaultDueDate = DateTime.Parse(txtDefaultDueDate.Text),
-            IsActive = chkIsActive.Checked
-        });
+            decimal amt;
+            if (!decimal.TryParse(txtDefaultAmount.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out amt) &&
+                !decimal.TryParse(txtDefaultAmount.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out amt))
+                amt = 0m;
 
-        ClearForm();
-        BindFeeDefinitionsGridView();
-        PopulateStats();
-        ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee type added successfully!');", true);
+            var req = new SaveFeeHeadRequestApi
+            {
+                id = null,
+                name = txtFeeName.Text.Trim(),
+                code = string.IsNullOrWhiteSpace(txtFeeDescription.Text) ? null : txtFeeDescription.Text.Trim(),
+                frequency = string.IsNullOrWhiteSpace(ddlApplicableClass.SelectedValue) ? null : ddlApplicableClass.SelectedValue,
+                default_amount = amt,
+                status = chkIsActive.Checked,
+                created_by_id = null
+            };
+
+            var res = await ApiHelper.PostAsync("api/Fees/saveFeeHead", req, HttpContext.Current);
+            if (res != null && res.response_code == "200")
+            {
+                ClearForm();
+                await BindFeeDefinitionsGridViewAsync();
+                PopulateStatsFromCache();
+                ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee head saved successfully!');", true);
+            }
+            else
+            {
+                var msg = res != null && res.obj != null ? res.obj.ToString() : "Failed.";
+                msg = msg.Replace("'", "\\'");
+                ScriptManager.RegisterStartupScript(this, GetType(), "error", "alert('" + msg + "');", true);
+            }
+        }));
     }
 
     protected void gvFeeDefinitions_RowEditing(object sender, GridViewEditEventArgs e)
     {
-        // Cancel edit mode
         gvFeeDefinitions.EditIndex = -1;
 
         int feeDefID = (int)gvFeeDefinitions.DataKeys[e.NewEditIndex].Value;
-        EditingFeeDefinitionID = feeDefID; // Store ID for update
+        EditingFeeDefinitionID = feeDefID;
 
-        FeeDefinition feeDef = _feeDefinitions.FirstOrDefault(f => f.FeeDefinitionID == feeDefID);
-
-        if (feeDef != null)
+        var heads = GetFeeHeadsFromCache();
+        var head = heads.FirstOrDefault(x => x.id == feeDefID);
+        if (head != null)
         {
-            txtFeeName.Text = feeDef.FeeName;
-            txtFeeDescription.Text = feeDef.Description;
-            txtDefaultAmount.Text = feeDef.DefaultAmount.ToString("F2");
-            ddlApplicableClass.SelectedValue = feeDef.ApplicableClassID;
-            txtDefaultDueDate.Text = feeDef.DefaultDueDate.ToString("yyyy-MM-dd");
-            chkIsActive.Checked = feeDef.IsActive;
+            txtFeeName.Text = head.name;
+            txtFeeDescription.Text = head.code;
+            txtDefaultAmount.Text = head.default_amount.ToString("F2", CultureInfo.InvariantCulture);
+            ddlApplicableClass.SelectedValue = head.frequency ?? "";
+            chkIsActive.Checked = head.status.HasValue ? head.status.Value : true;
 
-            // Adjust buttons for edit mode
             btnAddFeeType.Visible = false;
             btnUpdateFeeType.Visible = true;
             btnCancelEdit.Visible = true;
@@ -142,59 +175,71 @@ public partial class Dashboard_admin_feedefinition : System.Web.UI.Page
     {
         if (!IsValid) return;
 
-        FeeDefinition feeDef = _feeDefinitions.FirstOrDefault(f => f.FeeDefinitionID == EditingFeeDefinitionID);
-
-        if (feeDef != null)
+        RegisterAsyncTask(new PageAsyncTask(async () =>
         {
-            string applicableClassID = ddlApplicableClass.SelectedValue;
-            string applicableClassName = ddlApplicableClass.SelectedItem.Text;
-            if (string.IsNullOrEmpty(applicableClassID)) { applicableClassName = "All Classes"; }
+            decimal amt;
+            if (!decimal.TryParse(txtDefaultAmount.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out amt) &&
+                !decimal.TryParse(txtDefaultAmount.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out amt))
+                amt = 0m;
 
-            feeDef.FeeName = txtFeeName.Text.Trim();
-            feeDef.Description = txtFeeDescription.Text.Trim();
-            feeDef.DefaultAmount = decimal.Parse(txtDefaultAmount.Text);
-            feeDef.ApplicableClassID = applicableClassID;
-            feeDef.ApplicableClass = applicableClassName;
-            feeDef.DefaultDueDate = DateTime.Parse(txtDefaultDueDate.Text);
-            feeDef.IsActive = chkIsActive.Checked;
+            var req = new SaveFeeHeadRequestApi
+            {
+                id = EditingFeeDefinitionID,
+                name = txtFeeName.Text.Trim(),
+                code = string.IsNullOrWhiteSpace(txtFeeDescription.Text) ? null : txtFeeDescription.Text.Trim(),
+                frequency = string.IsNullOrWhiteSpace(ddlApplicableClass.SelectedValue) ? null : ddlApplicableClass.SelectedValue,
+                default_amount = amt,
+                status = chkIsActive.Checked,
+                created_by_id = null
+            };
 
-            ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee type updated successfully!');", true);
-        }
-        else
-        {
-            ScriptManager.RegisterStartupScript(this, GetType(), "error", "alert('Error: Fee type not found for update.');", true);
-        }
-
-        ClearForm();
-        BindFeeDefinitionsGridView();
-        PopulateStats();
-        EditingFeeDefinitionID = 0; // Reset editing mode
+            var res = await ApiHelper.PostAsync("api/Fees/saveFeeHead", req, HttpContext.Current);
+            if (res != null && res.response_code == "200")
+            {
+                ClearForm();
+                EditingFeeDefinitionID = 0;
+                await BindFeeDefinitionsGridViewAsync();
+                PopulateStatsFromCache();
+                ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee head updated successfully!');", true);
+            }
+            else
+            {
+                var msg = res != null && res.obj != null ? res.obj.ToString() : "Failed.";
+                msg = msg.Replace("'", "\\'");
+                ScriptManager.RegisterStartupScript(this, GetType(), "error", "alert('" + msg + "');", true);
+            }
+        }));
     }
 
     protected void gvFeeDefinitions_RowDeleting(object sender, GridViewDeleteEventArgs e)
     {
         int feeDefID = (int)gvFeeDefinitions.DataKeys[e.RowIndex].Value;
-        FeeDefinition feeDefToRemove = _feeDefinitions.FirstOrDefault(f => f.FeeDefinitionID == feeDefID);
 
-        if (feeDefToRemove != null)
+        RegisterAsyncTask(new PageAsyncTask(async () =>
         {
-            _feeDefinitions.Remove(feeDefToRemove);
-            ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee type deleted successfully!');", true);
-        }
-        else
-        {
-            ScriptManager.RegisterStartupScript(this, GetType(), "error", "alert('Error: Fee type not found for deletion.');", true);
-        }
+            var res = await ApiHelper.PostAsync("api/Fees/deleteFeeHead", new DeleteFeeHeadRequestApi { id = feeDefID, deleted_by_id = null }, HttpContext.Current);
+            if (res != null && res.response_code == "200")
+            {
+                ScriptManager.RegisterStartupScript(this, GetType(), "success", "alert('Fee head deleted successfully!');", true);
+            }
+            else
+            {
+                var msg = res != null && res.obj != null ? res.obj.ToString() : "Failed.";
+                msg = msg.Replace("'", "\\'");
+                ScriptManager.RegisterStartupScript(this, GetType(), "error", "alert('" + msg + "');", true);
+            }
 
-        BindFeeDefinitionsGridView();
-        PopulateStats();
+            ClearForm();
+            EditingFeeDefinitionID = 0;
+            await BindFeeDefinitionsGridViewAsync();
+            PopulateStatsFromCache();
+        }));
     }
 
     protected void btnCancelEdit_Click(object sender, EventArgs e)
     {
         ClearForm();
-        EditingFeeDefinitionID = 0; // Exit edit mode
-        ScriptManager.RegisterStartupScript(this, GetType(), "cancel", "alert('Edit cancelled.');", true);
+        EditingFeeDefinitionID = 0;
     }
 
     private void ClearForm()
@@ -202,18 +247,14 @@ public partial class Dashboard_admin_feedefinition : System.Web.UI.Page
         txtFeeName.Text = "";
         txtFeeDescription.Text = "";
         txtDefaultAmount.Text = "";
-        ddlApplicableClass.SelectedValue = ""; // Select "All Classes"
-        txtDefaultDueDate.Text = DateTime.Today.ToString("yyyy-MM-dd"); // Reset date
+        ddlApplicableClass.SelectedValue = "";
         chkIsActive.Checked = true;
 
         btnAddFeeType.Visible = true;
         btnUpdateFeeType.Visible = false;
         btnCancelEdit.Visible = false;
 
-        // Clear validators to prevent error messages from previous inputs showing up
         foreach (BaseValidator validator in Page.Validators)
-        {
             validator.Validate();
-        }
     }
 }

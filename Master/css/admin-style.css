@@ -8,7 +8,6 @@ body:not(.sidebar-collapsed) .tooltip {
     display: none !important;
 }
 
-
 body {
     background-color: #f9fafb; /* gray-50 */
 }
@@ -42,42 +41,47 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.45rem 1rem;
-    border-radius: 0.375rem;
-    color: #000000; /* gray-300 */
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    color: #111827; /* gray-900 */
     text-decoration: none;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
     border-left: 4px solid transparent;
 }
 
-    .sidebar-link:hover {
-        background-color: #e5e5e5b9; /* gray-700 */
-    }
+.sidebar-link:hover {
+    background-color: #f3f4f6; /* gray-100 */
+}
 
-    .sidebar-link i {
-        font-size: 1.2rem;
-        transition: color 0.2s ease-in-out;
-    }
+.sidebar-link i {
+    font-size: 1.15rem;
+    color: #4b5563; /* gray-600 */
+}
 
-    .sidebar-link.active {
-        background-color: #1f2937; /* gray-800 */
-        border-left: 4px solid #6366f1; /* indigo-500 */
-        color: #fff;
-    }
+.sidebar-link.active {
+    background-color: #eef2ff; /* indigo-50 */
+    border-left: 4px solid #6366f1; /* indigo-500 */
+    color: #111827;
+}
 
-        .sidebar-link.active i {
-            color: #fff;
-        }
+.sidebar-link.active i {
+    color: #4338ca; /* indigo-700 */
+}
 
 /* Sidebar sections */
 .app-sidebar nav > div {
     margin-top: 1rem;
 }
 
-    .app-sidebar nav > div:not(:first-child) {
-        border-top: 1px solid #374151;
-        padding-top: 1rem;
-    }
+.app-sidebar nav > div:not(:first-child) {
+    border-top: 1px solid #e5e7eb; /* gray-200 */
+    padding-top: 0.75rem;
+}
+
+.app-sidebar nav p.text-gray-500 {
+    color: #6b7280 !important; /* gray-500 */
+    letter-spacing: 0.08em;
+}
 
 /* Scrollbar */
 .app-sidebar nav::-webkit-scrollbar {
@@ -189,4 +193,35 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 999px;
+}
+
+/* --- Admin UI utilities (reusable) --- */
+.page-subtitle {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.table-wrap {
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: .75rem;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.kpi {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: .9rem;
+    padding: .9rem;
+}
+
+.kpi .value {
+    font-weight: 800;
+}
+
+.kpi .label {
+    font-size: .78rem;
+    color: #6c757d;
+    letter-spacing: .02em;
+    text-transform: uppercase;
 }

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="collectfee.aspx.cs" Inherits="Dashboard_admin_collectfee" %>
+﻿<%@ Page Title="" Language="C#" Async="true" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="collectfee.aspx.cs" Inherits="Dashboard_admin_collectfee" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
 </asp:Content>
@@ -52,8 +52,23 @@
                         <span class="badge rounded-pill" id="feeStatusBadge" runat="server"></span>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-0 text-muted">Due Date:</p>
+                        <p class="mb-0 text-muted">Next Due Date:</p>
                         <h6 class="fw-normal"><asp:Literal ID="litDueDate" runat="server"></asp:Literal></h6>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h6 class="fw-bold mb-3">Select Installment</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-8">
+                        <asp:Label ID="lblInstallment" runat="server" Text="Pending Installment" CssClass="form-label fw-semibold"></asp:Label>
+                        <asp:DropDownList ID="ddlInstallment" runat="server" CssClass="form-select" AutoPostBack="True" OnSelectedIndexChanged="ddlInstallment_SelectedIndexChanged">
+                            <asp:ListItem Text="-- Select Installment --" Value="" />
+                        </asp:DropDownList>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-0 text-muted">Selected Balance:</p>
+                        <h6 class="fw-normal"><asp:Literal ID="litSelectedInstallmentBalance" runat="server" Text="-" /></h6>
                     </div>
                 </div>
 

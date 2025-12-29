@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="feedefinition.aspx.cs" Inherits="Dashboard_admin_feedefinition" %>
+﻿<%@ Page Title="" Language="C#" Async="true" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="feedefinition.aspx.cs" Inherits="Dashboard_admin_feedefinition" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
     <style>
@@ -31,7 +31,7 @@
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
     <!-- Fee Definition Stats (Optional, could be count of fee types etc.) -->
-    <div class="row g-4 mb-4">
+    <div class="row mb-4">
         <div class="col-md-6 col-xl-4">
             <div class="card shadow-sm stat-card border-0 h-100">
                 <div class="card-body d-flex align-items-center p-3">
@@ -83,18 +83,18 @@
     <!-- Add New Fee Type Form -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white p-3">
-            <h5 class="mb-0 fw-bold">Add New Fee Type / Update Fee Structure</h5>
+            <h5 class="mb-0 fw-bold">Add / Update Fee Head</h5>
         </div>
         <div class="card-body p-4">
-            <div class="row g-3">
+            <div class="row">
                 <div class="col-md-6">
-                    <asp:Label ID="lblFeeName" runat="server" Text="Fee Name" CssClass="form-label fw-semibold"></asp:Label>
+                    <asp:Label ID="lblFeeName" runat="server" Text="Fee Head Name" CssClass="form-label fw-semibold"></asp:Label>
                     <asp:TextBox ID="txtFeeName" runat="server" CssClass="form-control" placeholder="e.g., Tuition Fee, Library Fee"></asp:TextBox>
-                    <asp:RequiredFieldValidator ID="rfvFeeName" runat="server" ControlToValidate="txtFeeName" ErrorMessage="Fee Name is required." CssClass="text-danger" Display="Dynamic"></asp:RequiredFieldValidator>
+                    <asp:RequiredFieldValidator ID="rfvFeeName" runat="server" ControlToValidate="txtFeeName" ErrorMessage="Fee Head Name is required." CssClass="text-danger" Display="Dynamic"></asp:RequiredFieldValidator>
                 </div>
                 <div class="col-md-6">
-                    <asp:Label ID="lblFeeDescription" runat="server" Text="Description (Optional)" CssClass="form-label fw-semibold"></asp:Label>
-                    <asp:TextBox ID="txtFeeDescription" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2" placeholder="Brief description of this fee"></asp:TextBox>
+                    <asp:Label ID="lblFeeDescription" runat="server" Text="Fee Code (Optional)" CssClass="form-label fw-semibold"></asp:Label>
+                    <asp:TextBox ID="txtFeeDescription" runat="server" CssClass="form-control" placeholder="e.g., TUITION, LIB"></asp:TextBox>
                 </div>
                 <div class="col-md-4">
                     <asp:Label ID="lblDefaultAmount" runat="server" Text="Default Amount" CssClass="form-label fw-semibold"></asp:Label>
@@ -104,29 +104,29 @@
                         Operator="DataTypeCheck" Type="Currency" ErrorMessage="Amount must be a valid number." CssClass="text-danger" Display="Dynamic"></asp:CompareValidator>
                 </div>
                 <div class="col-md-4">
-                    <asp:Label ID="lblApplicableClass" runat="server" Text="Applicable Class (Optional)" CssClass="form-label fw-semibold"></asp:Label>
+                    <asp:Label ID="lblApplicableClass" runat="server" Text="Frequency (Optional)" CssClass="form-label fw-semibold"></asp:Label>
                     <asp:DropDownList ID="ddlApplicableClass" runat="server" CssClass="form-select">
-                        <asp:ListItem Text="-- All Classes --" Value="" />
-                        <asp:ListItem Text="Grade 1 - A" Value="G1A" />
-                        <asp:ListItem Text="Grade 1 - B" Value="G1B" />
-                        <asp:ListItem Text="Grade 5 - A" Value="G5A" />
-                        <asp:ListItem Text="Grade 8 - A" Value="G8A" />
+                        <asp:ListItem Text="-- Select Frequency --" Value="" />
+                        <asp:ListItem Text="OneTime" Value="OneTime" />
+                        <asp:ListItem Text="Monthly" Value="Monthly" />
+                        <asp:ListItem Text="Quarterly" Value="Quarterly" />
+                        <asp:ListItem Text="HalfYearly" Value="HalfYearly" />
+                        <asp:ListItem Text="Yearly" Value="Yearly" />
                     </asp:DropDownList>
-                    <small class="text-muted">Leave blank for a general fee.</small>
                 </div>
                 <div class="col-md-4">
                     <asp:Label ID="lblDueDate" runat="server" Text="Default Due Date" CssClass="form-label fw-semibold"></asp:Label>
                     <asp:TextBox ID="txtDefaultDueDate" runat="server" CssClass="form-control" TextMode="Date"></asp:TextBox>
-                    <asp:RequiredFieldValidator ID="rfvDefaultDueDate" runat="server" ControlToValidate="txtDefaultDueDate" ErrorMessage="Due Date is required." CssClass="text-danger" Display="Dynamic"></asp:RequiredFieldValidator>
+                    <small class="text-muted">Not stored in Fee Head. For installment due dates, configure fee structure/installments.</small>
                 </div>
                 <div class="col-12">
                     <asp:CheckBox ID="chkIsActive" runat="server" Text="Is Active" Checked="true" CssClass="form-check-input me-2" />
-                    <asp:Label AssociatedControlID="chkIsActive" runat="server" Text="Set this fee as active for new enrollments/periods." CssClass="form-check-label"></asp:Label>
+                    <asp:Label AssociatedControlID="chkIsActive" runat="server" Text="Active fee heads can be used in fee structures." CssClass="form-check-label"></asp:Label>
                 </div>
             </div>
             <div class="mt-4 pt-3 border-top">
-                <asp:Button ID="btnAddFeeType" runat="server" Text="Add Fee Type" CssClass="btn btn-primary me-2" OnClick="btnAddFeeType_Click" />
-                <asp:Button ID="btnUpdateFeeType" runat="server" Text="Update Fee Type" CssClass="btn btn-warning me-2" OnClick="btnUpdateFeeType_Click" Visible="false" />
+                <asp:Button ID="btnAddFeeType" runat="server" Text="Add Fee Head" CssClass="btn btn-primary me-2" OnClick="btnAddFeeType_Click" />
+                <asp:Button ID="btnUpdateFeeType" runat="server" Text="Update Fee Head" CssClass="btn btn-warning me-2" OnClick="btnUpdateFeeType_Click" Visible="false" />
                 <asp:Button ID="btnCancelEdit" runat="server" Text="Cancel" CssClass="btn btn-outline-secondary" OnClick="btnCancelEdit_Click" Visible="false" />
             </div>
         </div>
@@ -135,20 +135,19 @@
     <!-- Existing Fee Types List -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white p-3">
-            <h5 class="mb-0 fw-bold">Defined Fee Structures</h5>
+            <h5 class="mb-0 fw-bold">Fee Heads</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">A list of all fee types and their default amounts per class or generally applicable.</p>
+            <p class="text-muted">Manage fee heads (Tuition, Library, etc.). Class-wise amounts and due dates are configured in fee structures/installments.</p>
 
             <div class="table-responsive">
                 <asp:GridView ID="gvFeeDefinitions" runat="server" AutoGenerateColumns="False" CssClass="table table-hover align-middle"
                     DataKeyNames="FeeDefinitionID" OnRowEditing="gvFeeDefinitions_RowEditing" OnRowDeleting="gvFeeDefinitions_RowDeleting">
                     <Columns>
-                        <asp:BoundField DataField="FeeName" HeaderText="Fee Name" />
-                        <asp:BoundField DataField="Description" HeaderText="Description" />
+                        <asp:BoundField DataField="FeeName" HeaderText="Name" />
+                        <asp:BoundField DataField="Code" HeaderText="Code" />
+                        <asp:BoundField DataField="Frequency" HeaderText="Frequency" />
                         <asp:BoundField DataField="DefaultAmount" HeaderText="Default Amount" DataFormatString="{0:C}" />
-                        <asp:BoundField DataField="ApplicableClass" HeaderText="Applicable Class" />
-                        <asp:BoundField DataField="DefaultDueDate" HeaderText="Due Date" DataFormatString="{0:d}" />
                         <asp:TemplateField HeaderText="Active">
                             <ItemTemplate>
                                 <asp:CheckBox ID="chkActiveStatus" runat="server" Checked='<%# Eval("IsActive") %>' Enabled="false" />
@@ -159,7 +158,7 @@
                                 <asp:LinkButton ID="lnkEdit" runat="server" CssClass="btn btn-sm btn-outline-primary me-2" CommandName="Edit" CommandArgument='<%# Eval("FeeDefinitionID") %>'>
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </asp:LinkButton>
-                                <asp:LinkButton ID="lnkDelete" runat="server" CssClass="btn btn-sm btn-outline-danger" CommandName="Delete" OnClientClick="return confirm('Are you sure you want to delete this fee type? This action cannot be undone.');" CommandArgument='<%# Eval("FeeDefinitionID") %>'>
+                                <asp:LinkButton ID="lnkDelete" runat="server" CssClass="btn btn-sm btn-outline-danger" CommandName="Delete" OnClientClick="return confirm('Are you sure you want to delete this fee head? This action cannot be undone.');" CommandArgument='<%# Eval("FeeDefinitionID") %>'>
                                     <i class="bi bi-trash"></i> Delete
                                 </asp:LinkButton>
                             </ItemTemplate>
@@ -167,7 +166,7 @@
                     </Columns>
                     <EmptyDataTemplate>
                         <div class="alert alert-info" role="alert">
-                            No fee types defined yet. Use the form above to add one.
+                            No fee heads defined yet. Use the form above to add one.
                         </div>
                     </EmptyDataTemplate>
                 </asp:GridView>

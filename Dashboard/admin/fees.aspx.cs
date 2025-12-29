@@ -1,141 +1,187 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
 public partial class Dashboard_admin_fees : System.Web.UI.Page
 {
-    // Dummy Data Structures
-    public class Student
+    private class FeesGridRow
     {
         public int StudentID { get; set; }
         public string RollNo { get; set; }
         public string StudentName { get; set; }
-        public string ClassSectionID { get; set; } // e.g., "G1A"
-        public string ClassName { get; set; } // e.g., "Grade 1 - A"
-    }
-
-    public class FeeRecord
-    {
-        public int FeeID { get; set; }
-        public int StudentID { get; set; }
+        public string ClassName { get; set; }
+        public string ClassSectionID { get; set; }
         public decimal TotalFees { get; set; }
         public decimal AmountPaid { get; set; }
+        public decimal BalanceDue { get; set; }
+        public string Status { get; set; }
+        public string StatusClass { get; set; }
         public DateTime DueDate { get; set; }
-        public string Status { get; set; } // Paid, Pending, Overdue, Partial
-        public string StatusClass { get; set; } // CSS class for badge
     }
-
-    // Simulate database data
-    private static List<Student> _students = new List<Student>
-    {
-        new Student { StudentID = 1, RollNo = "S001", StudentName = "Alice Smith", ClassSectionID = "G1A", ClassName = "Grade 1 - A" },
-        new Student { StudentID = 2, RollNo = "S002", StudentName = "Bob Johnson", ClassSectionID = "G1A", ClassName = "Grade 1 - A" },
-        new Student { StudentID = 3, RollNo = "S003", StudentName = "Charlie Brown", ClassSectionID = "G1B", ClassName = "Grade 1 - B" },
-        new Student { StudentID = 4, RollNo = "S004", StudentName = "David Lee", ClassSectionID = "G5A", ClassName = "Grade 5 - A" },
-        new Student { StudentID = 5, RollNo = "S005", StudentName = "Eve Davis", ClassSectionID = "G8A", ClassName = "Grade 8 - A" },
-        new Student { StudentID = 6, RollNo = "S006", StudentName = "Frank White", ClassSectionID = "G5A", ClassName = "Grade 5 - A" },
-    };
-
-    // Fees are annual, assuming one main record per student per year for simplicity
-    private static List<FeeRecord> _feeRecords = new List<FeeRecord>
-    {
-        new FeeRecord { FeeID = 1, StudentID = 1, TotalFees = 1200.00m, AmountPaid = 1200.00m, DueDate = new DateTime(DateTime.Now.Year, 9, 1), Status = "Paid", StatusClass = "badge-paid" },
-        new FeeRecord { FeeID = 2, StudentID = 2, TotalFees = 1200.00m, AmountPaid = 800.00m, DueDate = new DateTime(DateTime.Now.Year, 9, 1), Status = "Partial", StatusClass = "badge-partial" },
-        new FeeRecord { FeeID = 3, StudentID = 3, TotalFees = 1200.00m, AmountPaid = 0.00m, DueDate = new DateTime(DateTime.Now.Year, 10, 1), Status = "Pending", StatusClass = "badge-pending" },
-        new FeeRecord { FeeID = 4, StudentID = 4, TotalFees = 1500.00m, AmountPaid = 0.00m, DueDate = new DateTime(DateTime.Now.Year, 8, 1), Status = "Overdue", StatusClass = "badge-overdue" }, // Overdue
-        new FeeRecord { FeeID = 5, StudentID = 5, TotalFees = 1800.00m, AmountPaid = 1000.00m, DueDate = new DateTime(DateTime.Now.Year, 11, 1), Status = "Partial", StatusClass = "badge-partial" },
-        new FeeRecord { FeeID = 6, StudentID = 6, TotalFees = 1500.00m, AmountPaid = 1500.00m, DueDate = new DateTime(DateTime.Now.Year, 9, 15), Status = "Paid", StatusClass = "badge-paid" },
-    };
-
 
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
         {
-            PopulateStats();
-            BindFeesGridView();
+            RegisterAsyncTask(new PageAsyncTask(LoadReportAsync));
         }
     }
 
-    private void PopulateStats()
+    private async Task<OutstandingFeesReportApi> FetchOutstandingReportAsync()
     {
-        litTotalExpectedFees.Text = _feeRecords.Sum(f => f.TotalFees).ToString("C");
-        litTotalCollectedFees.Text = _feeRecords.Sum(f => f.AmountPaid).ToString("C");
-        litOutstandingFees.Text = (_feeRecords.Sum(f => f.TotalFees) - _feeRecords.Sum(f => f.AmountPaid)).ToString("C");
-        litOverdueAccounts.Text = _feeRecords.Count(f => f.Status == "Overdue").ToString();
-    }
+        // Filters: use onlyOverdue only if status filter is Overdue.
+        bool onlyOverdue = string.Equals(ddlFilterStatus.SelectedValue, "Overdue", StringComparison.OrdinalIgnoreCase);
 
-    private void BindFeesGridView()
-    {
-        string filterClass = ddlFilterClass.SelectedValue;
-        string filterStatus = ddlFilterStatus.SelectedValue;
-        string searchTerm = txtSearchStudent.Text.ToLower();
-
-        var feesQuery = from fee in _feeRecords
-                        join student in _students on fee.StudentID equals student.StudentID
-                        select new
-                        {
-                            student.StudentID,
-                            student.RollNo,
-                            student.StudentName,
-                            student.ClassName,
-                            student.ClassSectionID, // ✅ include this
-                            fee.TotalFees,
-                            fee.AmountPaid,
-                            BalanceDue = fee.TotalFees - fee.AmountPaid,
-                            fee.Status,
-                            fee.StatusClass,
-                            fee.DueDate
-                        };
-
-
-        if (!string.IsNullOrEmpty(filterClass))
+        var payload = new OutstandingFeesFilterApi
         {
-            feesQuery = feesQuery.Where(f => f.ClassSectionID == filterClass);
+            classId = null, // current UI dropdown values are dummy class-section strings; keep null to avoid wrong filtering
+            studentId = null,
+            academicYearId = null,
+            dueFrom = null,
+            dueTo = null,
+            onlyOverdue = onlyOverdue ? (bool?)true : null
+        };
+
+        var res = await ApiHelper.PostAsync("api/Fees/getOutstandingFeesReport", payload, HttpContext.Current);
+        if (res == null || res.response_code != "200")
+            return null;
+
+        try
+        {
+            var json = JsonConvert.SerializeObject(res.obj);
+            return JsonConvert.DeserializeObject<OutstandingFeesReportApi>(json);
         }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string MapStatusClass(string status)
+    {
+        if (string.Equals(status, "paid", StringComparison.OrdinalIgnoreCase)) return "badge-paid";
+        if (string.Equals(status, "partial", StringComparison.OrdinalIgnoreCase)) return "badge-partial";
+        if (string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase)) return "badge-pending";
+        if (string.Equals(status, "overdue", StringComparison.OrdinalIgnoreCase)) return "badge-overdue";
+        return "badge-pending";
+    }
+
+    private static string MapUiStatus(OutstandingFeeItemApi item)
+    {
+        if (item == null) return "Pending";
+        if (item.days_overdue > 0) return "Overdue";
+        if (item.paid_amount > 0 && item.outstanding_amount > 0) return "Partial";
+        if (item.paid_amount <= 0 && item.outstanding_amount > 0) return "Pending";
+        return "Paid";
+    }
+
+    private async Task LoadReportAsync()
+    {
+        var report = await FetchOutstandingReportAsync();
+        if (report == null)
+        {
+            litTotalExpectedFees.Text = "—";
+            litTotalCollectedFees.Text = "—";
+            litOutstandingFees.Text = "—";
+            litOverdueAccounts.Text = "—";
+            gvFees.DataSource = new List<FeesGridRow>();
+            gvFees.DataBind();
+            return;
+        }
+
+        // Totals based on outstanding report
+        litTotalExpectedFees.Text = report.total_due.ToString("C", CultureInfo.CurrentCulture);
+        litTotalCollectedFees.Text = report.total_paid.ToString("C", CultureInfo.CurrentCulture);
+        litOutstandingFees.Text = report.total_outstanding.ToString("C", CultureInfo.CurrentCulture);
+        litOverdueAccounts.Text = (report.items ?? new List<OutstandingFeeItemApi>()).Count(x => x.days_overdue > 0).ToString();
+
+        BindFeesGridView(report);
+    }
+
+    private void BindFeesGridView(OutstandingFeesReportApi report)
+    {
+        var items = report.items ?? new List<OutstandingFeeItemApi>();
+
+        string filterStatus = ddlFilterStatus.SelectedValue;
+        string searchTerm = (txtSearchStudent.Text ?? string.Empty).Trim().ToLowerInvariant();
+
+        // Group by student to produce the same shape as the old grid.
+        var rows = items
+            .GroupBy(x => x.student_id)
+            .Select(g =>
+            {
+                var first = g.OrderBy(x => x.due_date).First();
+                var totalDue = g.Sum(x => x.due_amount);
+                var totalPaid = g.Sum(x => x.paid_amount);
+                var totalOut = g.Sum(x => x.outstanding_amount);
+
+                var anyOverdue = g.Any(x => x.days_overdue > 0);
+                string status = anyOverdue ? "Overdue" : (totalPaid > 0 ? "Partial" : "Pending");
+                string cls = MapStatusClass(status);
+
+                return new FeesGridRow
+                {
+                    StudentID = first.student_id,
+                    RollNo = first.student_code,
+                    StudentName = first.student_name,
+                    ClassName = first.class_name,
+                    ClassSectionID = first.class_name,
+                    TotalFees = totalDue,
+                    AmountPaid = totalPaid,
+                    BalanceDue = totalOut,
+                    Status = status,
+                    StatusClass = cls,
+                    DueDate = first.due_date
+                };
+            })
+            .ToList();
 
         if (!string.IsNullOrEmpty(filterStatus))
         {
-            feesQuery = feesQuery.Where(f => f.Status == filterStatus);
+            // UI filter values are: Paid/Pending/Overdue/Partial
+            rows = rows.Where(r => string.Equals(r.Status, filterStatus, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (!string.IsNullOrEmpty(searchTerm))
         {
-            feesQuery = feesQuery.Where(f => f.StudentName.ToLower().Contains(searchTerm) ||
-                                             f.RollNo.ToLower().Contains(searchTerm));
+            rows = rows.Where(r =>
+                (!string.IsNullOrEmpty(r.StudentName) && r.StudentName.ToLowerInvariant().Contains(searchTerm))
+                || (!string.IsNullOrEmpty(r.RollNo) && r.RollNo.ToLowerInvariant().Contains(searchTerm))
+            ).ToList();
         }
 
-        gvFees.DataSource = feesQuery.ToList();
+        gvFees.DataSource = rows;
         gvFees.DataBind();
     }
 
     protected void ddlFilterClass_SelectedIndexChanged(object sender, EventArgs e)
     {
-        BindFeesGridView();
+        // Not wired because dropdown uses dummy class-section codes.
+        RegisterAsyncTask(new PageAsyncTask(LoadReportAsync));
     }
 
     protected void ddlFilterStatus_SelectedIndexChanged(object sender, EventArgs e)
     {
-        BindFeesGridView();
+        RegisterAsyncTask(new PageAsyncTask(LoadReportAsync));
     }
 
     protected void txtSearchStudent_TextChanged(object sender, EventArgs e)
     {
-        BindFeesGridView();
+        RegisterAsyncTask(new PageAsyncTask(LoadReportAsync));
+    }
+
+    protected void btnSearch_Click(object sender, EventArgs e)
+    {
+        RegisterAsyncTask(new PageAsyncTask(LoadReportAsync));
     }
 
     protected void gvFees_RowDataBound(object sender, GridViewRowEventArgs e)
     {
-        if (e.Row.RowType == DataControlRowType.DataRow)
-        {
-            // Set the CSS class for the status badge directly from the bound data
-            // The template already uses Eval('StatusClass') so this might not be strictly necessary
-            // unless you want to do more complex logic here.
-        }
     }
-
-
 }

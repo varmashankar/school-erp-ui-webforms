@@ -68,6 +68,16 @@
                     <a href="/Dashboard/admin/attendance.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Attendance"><i class="bi bi-check2-square"></i><span class="sidebar-label">Attendance</span></a>
                 </div>
 
+                <!-- Admissions -->
+                <div>
+                    <p class="text-uppercase small fw-bold text-gray-500 px-2 mt-2 mb-2">Admissions</p>
+                    <a href="/Dashboard/admin/admissionform.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Admission Form"><i class="bi bi-person-plus"></i><span class="sidebar-label">Admission Form</span></a>
+                    <a href="/Dashboard/admin/inquiry-create.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Create Inquiry"><i class="bi bi-plus-square"></i><span class="sidebar-label">Create Inquiry</span></a>
+                    <a href="/Dashboard/admin/inquiries.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Inquiries"><i class="bi bi-clipboard-check"></i><span class="sidebar-label">Inquiries</span></a>
+                    <a href="/Dashboard/admin/inquiry-followups.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Follow-ups"><i class="bi bi-telephone"></i><span class="sidebar-label">Follow-ups</span></a>
+                    <a href="/Dashboard/admin/inquiry-conversion-report.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Conversion Report"><i class="bi bi-graph-up"></i><span class="sidebar-label">Conversion Report</span></a>
+                </div>
+
                 <!-- Administration -->
                 <div>
                     <p class="text-uppercase small fw-bold text-gray-500 px-2 mt-2 mb-2">Administration</p>
@@ -95,6 +105,7 @@
                 <div>
                     <p class="text-uppercase small fw-bold text-gray-500 px-2 mt-2 mb-2">Reports</p>
                     <a href="/Dashboard/admin/attendancereports.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Attendance Report"><i class="bi bi-clipboard-data"></i><span class="sidebar-label">Attendance</span></a>
+                    <a href="/Dashboard/admin/accountability-dashboard.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Accountability Dashboard"><i class="bi bi-bar-chart-line"></i><span class="sidebar-label">Accountability</span></a>
                     <a href="reports-finance.aspx" class="sidebar-link" data-bs-toggle="tooltip" title="Finance Reports"><i class="bi bi-graph-up"></i><span class="sidebar-label">Finance</span></a>
                 </div>
 

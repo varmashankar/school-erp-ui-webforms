@@ -9,6 +9,26 @@
         var $table = $(selector);
         if (!$table.length) return null;
 
+        // Guard: WebForms GridView may render body rows with colspan (e.g. EmptyDataRow). DataTables throws tn/18.
+        try {
+            var headerCols = $table.find('thead tr').first().children('th,td').length;
+            var $firstBodyRow = $table.find('tbody tr').first();
+            if ($firstBodyRow.length) {
+                var bodyCols = 0;
+                $firstBodyRow.children('th,td').each(function () {
+                    var cs = parseInt($(this).attr('colspan') || '1', 10);
+                    if (isNaN(cs) || cs < 1) cs = 1;
+                    bodyCols += cs;
+                });
+
+                if (headerCols > 0 && bodyCols > 0 && headerCols !== bodyCols) {
+                    return null;
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
         // If a DataTable is already initialized on this table, destroy it first
         if ($.fn.DataTable.isDataTable($table)) {
             try {
