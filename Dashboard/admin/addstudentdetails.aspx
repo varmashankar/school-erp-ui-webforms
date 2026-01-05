@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Async="true" Language="C#" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="addstudentdetails.aspx.cs" Inherits="Dashboard_admin_addstudentdetails" %>
+<%@ Page Title="" Async="true" Language="C#" MasterPageFile="~/Master/admin.master" AutoEventWireup="true" CodeFile="addstudentdetails.aspx.cs" Inherits="Dashboard_admin_addstudentdetails" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="Server">
     <style>
@@ -152,7 +152,7 @@
         <div>
             <h3 class="text-dark fw-bold mb-0">Add Student Details</h3>
 
-            <%--<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '›';">
+            <%--<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '�';">
                 <ol class="breadcrumb mb-0" style="font-size: 0.875rem;">
                     <li class="breadcrumb-item"><a href="dashboard.aspx">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="students.aspx">Students</a></li>

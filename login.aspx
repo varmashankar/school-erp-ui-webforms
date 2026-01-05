@@ -3,239 +3,569 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head runat="server">
-    <title>Login | ERP-SCHOOL</title>
-
-    <!-- SEO Meta -->
+    <title>Admin Login | School ERP</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Secure login page for ERP-SCHOOL. Sign in to access your dashboard." />
-    <meta name="keywords" content="ERP-SCHOOL, School ERP Login, Education Management, Secure Access" />
-    <meta name="author" content="ERP-SCHOOL Team" />
-
-
-    <!-- Favicon -->
+    <meta name="description" content="Secure admin login page for School ERP. Sign in to access your dashboard." />
     <link rel="icon" type="image/png" href="/favicon.ico" />
-
-    <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
-
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out'
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' }
-                        }
-                    }
-                }
-            }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    </script>
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
 
-    <style type="text/css">
-        .bg-auth {
-            background: linear-gradient(120deg, #4f46e5 0%, #7e22ce 100%);
+        .font-playfair {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .main-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Left side - Branding */
+        .brand-side {
+            display: none;
+            width: 50%;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
             position: relative;
             overflow: hidden;
         }
 
-            .bg-auth::before {
-                content: "";
-                position: absolute;
-                width: 500px;
-                height: 500px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.1);
-                top: -250px;
-                right: -250px;
+        @media (min-width: 1024px) {
+            .brand-side {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 48px;
             }
+        }
 
-            .bg-auth::after {
-                content: "";
-                position: absolute;
-                width: 500px;
-                height: 500px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.07);
-                bottom: -300px;
-                left: -250px;
-            }
-
-        .form-container {
+        .brand-content {
             position: relative;
             z-index: 10;
-            background: #fff;
+            text-align: center;
+            color: white;
+            max-width: 400px;
         }
 
-        .bg-auth::before, .bg-auth::after {
-            animation: float 20s linear infinite;
+        .brand-logo {
+            width: 100%;
+            height: auto;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 22px;
         }
 
-        @keyframes float {
-            0% {
-                transform: translateY(0) translateX(0) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-50px) translateX(50px) rotate(180deg);
-            }
-
-            100% {
-                transform: translateY(0) translateX(0) rotate(360deg);
-            }
+        .brand-logo-img {
+            width: 50rem;
+            height: auto;
+            object-fit: contain;
         }
 
-        .bubble {
+        .brand-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .brand-tagline {
+            font-size: 16px;
+            opacity: 0.9;
+            color: #e8c547;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* Decorative elements */
+        .decoration-circle {
             position: absolute;
-            bottom: -100px;
-            background: rgba(255, 255, 255, 0.15);
             border-radius: 50%;
-            animation: rise 15s linear infinite;
+            opacity: 0.1;
         }
 
-            /* Randomize size, position, duration, and delay for natural effect */
-            .bubble:nth-child(1) {
-                width: 40px;
-                height: 40px;
-                left: 5%;
-                animation-duration: 12s;
-                animation-delay: 0s;
+        .circle-1 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #c9a227 0%, #e8c547 100%);
+            top: -200px;
+            right: -200px;
+        }
+
+        .circle-2 {
+            width: 300px;
+            height: 300px;
+            background: white;
+            bottom: -100px;
+            left: -100px;
+        }
+
+        .circle-3 {
+            width: 150px;
+            height: 150px;
+            background: #c9a227;
+            bottom: 20%;
+            right: 10%;
+            opacity: 0.15;
+        }
+
+        /* Right side - Login Form */
+        .login-side {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 24px;
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        @media (min-width: 1024px) {
+            .login-side {
+                width: 50%;
+                background: white;
+            }
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            padding: 40px 32px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (min-width: 1024px) {
+            .login-card {
+                box-shadow: none;
+                padding: 0;
+                background: transparent;
+            }
+        }
+
+        .mobile-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        @media (min-width: 1024px) {
+            .mobile-logo {
+                display: none;
+            }
+        }
+
+        .mobile-logo-wrapper {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(30, 58, 95, 0.3);
+        }
+
+        .mobile-logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .login-header {
+            margin-bottom: 32px;
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #c9a227 0%, #e8c547 100%);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .login-title {
+            font-family: 'Playfair Display', serif;
+            color: #1e3a5f;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: white;
+            border-color: #c9a227;
+            box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.1);
+        }
+
+        .form-input:focus + .input-icon {
+            color: #c9a227;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            color: #1e3a5f;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .remember-me input[type="checkbox"]:checked {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            border-color: #1e3a5f;
+        }
+
+        .remember-me input[type="checkbox"]:checked::after {
+            content: '\2713';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .forgot-link {
+            color: #c9a227;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link:hover {
+            color: #1e3a5f;
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30, 58, 95, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login.loading {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .btn-login.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 3px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #1e3a5f;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 24px;
             }
 
-            .bubble:nth-child(2) {
-                width: 60px;
-                height: 60px;
-                left: 15%;
-                animation-duration: 18s;
-                animation-delay: 2s;
+            .login-title {
+                font-size: 26px;
             }
 
-            .bubble:nth-child(3) {
-                width: 30px;
-                height: 30px;
-                left: 30%;
-                animation-duration: 14s;
-                animation-delay: 4s;
-            }
-
-            .bubble:nth-child(4) {
-                width: 50px;
-                height: 50px;
-                left: 45%;
-                animation-duration: 16s;
-                animation-delay: 1s;
-            }
-
-            .bubble:nth-child(5) {
-                width: 25px;
-                height: 25px;
-                left: 60%;
-                animation-duration: 20s;
-                animation-delay: 3s;
-            }
-
-            .bubble:nth-child(6) {
-                width: 45px;
-                height: 45px;
-                left: 70%;
-                animation-duration: 17s;
-                animation-delay: 5s;
-            }
-
-            .bubble:nth-child(7) {
-                width: 35px;
-                height: 35px;
-                left: 80%;
-                animation-duration: 13s;
-                animation-delay: 2s;
-            }
-
-            .bubble:nth-child(8) {
-                width: 55px;
-                height: 55px;
-                left: 90%;
-                animation-duration: 19s;
-                animation-delay: 0s;
-            }
-
-        @keyframes rise {
-            0% {
-                transform: translateY(0) translateX(0) scale(1);
-                opacity: 0.3;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                transform: translateY(-700px) translateX(50px) scale(1.2);
-                opacity: 0;
+            .remember-forgot {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
             }
         }
     </style>
 </head>
-<body class="bg-auth min-h-screen flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djRoLTR2LTRoNHptLTQtMjB2NGg0di00aC00em0yMCAyMHY0aC00di00aDR6bS00LTh2NGg0di00aC00ek0xMiAxNHY0SDh2LTRoNHptLTggOHY0SDB2LTRoNHptOC04djRIMTB2LTRoNHptMTYgMHY0aC00di00aDR6bS04LTh2NGgtNHY0aC00di00aDR2LTRoNHptMCAxNnY0aC00di00aDR6bS0xNiAwdjRoLTR2LTRoNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20"></div>
-    <div class="absolute inset-0 z-0 overflow-hidden">
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-        <span class="bubble"></span>
-    </div>
-
-    <form id="form1" runat="server" class="form-container shadow-lg rounded-lg p-8 w-full max-w-sm">
-        <div class="text-center mb-6">
-            <%--<i class="bi bi-mortarboard-fill text-3xl text-indigo-600"></i>--%>
-            <img src="assets/images/education.gif" alt="ERP-SCHOOL Logo" class="mx-auto h-20 w-20" />   
-            <h3 class="text-xl font-bold mt-2">Admin Login</h3>
-        </div>
-
-        <div class="mb-4">
-            <label for="txtUsername" class="block text-sm font-medium text-gray-700">Username</label>
-            <asp:TextBox ID="txtUsername" runat="server" placeholder="Enter Your Username" CssClass="mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-indigo-300" />
-        </div>
-
-        <div class="mb-4">
-            <label for="txtPassword" class="block text-sm font-medium text-gray-700">Password</label>
-            <asp:TextBox ID="txtPassword" runat="server" TextMode="Password" placeholder="Enter Your Password" CssClass="mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-indigo-300" />
-        </div>
-
-        <div class="flex items-start mb-4">
-            <div>
-                <asp:CheckBox ID="chkRemember" runat="server" CssClass="mr-1" />
-                <label for="chkRemember" class="text-sm text-gray-600">Remember me</label>
+<body>
+    <div class="main-container">
+        <!-- Left Brand Side (Desktop) -->
+        <div class="brand-side">
+            <div class="decoration-circle circle-1"></div>
+            <div class="decoration-circle circle-2"></div>
+            <div class="decoration-circle circle-3"></div>
+            
+            <div class="brand-content">
+                <div class="brand-logo">
+                    <asp:Image ID="imgLogo" runat="server" CssClass="brand-logo-img" AlternateText="School Logo" />
+                </div>
+                <h1 class="brand-title"><asp:Literal ID="litSchoolName" runat="server" Text="School ERP" /></h1>
+                <p class="brand-tagline"><asp:Literal ID="litSchoolTag" runat="server" Text="Excellence in Education" /></p>
             </div>
         </div>
 
-        <asp:Button ID="btnLogin" runat="server" Text="Login" CssClass="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition cursor-pointer" OnClick="btnLogin_Click" />
+        <!-- Right Login Side -->
+        <div class="login-side">
+            <form id="form1" runat="server" class="login-card">
+                <!-- Mobile Logo -->
+                <div class="mobile-logo">
+                    <div class="mobile-logo-wrapper">
+                        <asp:Image ID="imgLogoMobile" runat="server" CssClass="mobile-logo-img" AlternateText="School Logo" />
+                    </div>
+                </div>
 
-        <p class="text-center text-sm text-gray-600 mt-4">
-            Forgot Your Password? 
-            <a href="forgotpassword.aspx" class="text-indigo-600 hover:underline">Contact Admin</a>
-        </p>
-        <div class="mt-8 pt-5 border-t border-gray-200">
-            <p class="text-xs text-center text-gray-500">
-                &copy; <%= DateTime.Now.Year %> LOGICAL WAVE. All rights reserved.
-            </p>
+                <div class="login-header">
+                    <span class="admin-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        Administrator Access
+                    </span>
+                    <h1 class="login-title">Welcome Back</h1>
+                    <p class="login-subtitle">Sign in to your admin dashboard</p>
+                </div>
+
+                <div class="input-group">
+                    <label for="<%= txtUsername.ClientID %>">Username</label>
+                    <div class="input-wrapper">
+                        <asp:TextBox ID="txtUsername" runat="server" placeholder="Enter your username" CssClass="form-input" autocomplete="username" />
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="<%= txtPassword.ClientID %>">Password</label>
+                    <div class="input-wrapper">
+                        <asp:TextBox ID="txtPassword" runat="server" TextMode="Password" placeholder="Enter your password" CssClass="form-input" autocomplete="current-password" />
+                        <i class="fas fa-lock input-icon"></i>
+                        <button type="button" class="toggle-password" onclick="togglePassword()" aria-label="Show password">
+                            <i class="fas fa-eye" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="remember-forgot">
+                    <label class="remember-me">
+                        <asp:CheckBox ID="chkRemember" runat="server" />
+                        <span>Remember me</span>
+                    </label>
+                    <a href="forgotpassword.aspx" class="forgot-link">Forgot Password?</a>
+                </div>
+
+                <asp:Button ID="btnLogin" runat="server" Text="Sign In" CssClass="btn-login" OnClick="btnLogin_Click" OnClientClick="setLoading(); return true;" />
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <a href="Default.aspx" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Website
+                </a>
+
+                <div class="footer-text">
+                    &copy; <%= DateTime.Now.Year %> LOGICAL WAVE. All rights reserved.
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
+
+    <script>
+        function togglePassword() {
+            var pwdField = document.getElementById('<%= txtPassword.ClientID %>');
+            var icon = document.getElementById('toggleIcon');
+            if (pwdField.type === 'password') {
+                pwdField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwdField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function setLoading() {
+            var btn = document.getElementById('<%= btnLogin.ClientID %>');
+            btn.classList.add('loading');
+            btn.value = '';
+        }
+
+        window.addEventListener('load', function() {
+            var btn = document.getElementById('<%= btnLogin.ClientID %>');
+            btn.classList.remove('loading');
+            btn.value = 'Sign In';
+        });
+    </script>
 </body>
 </html>

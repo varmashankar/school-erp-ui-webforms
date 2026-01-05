@@ -176,7 +176,7 @@
                     <tbody>
                         <asp:Repeater ID="rptStudents" runat="server">
                             <ItemTemplate>
-                                <tr>
+                                <tr class="student-row" data-details-url='addstudentdetails.aspx?id=<%# CryptoHelper.Encrypt(Eval("id").ToString()) %>'>
                                     <td><%# Container.ItemIndex + 1 %></td>
                                     <td>
                                         <%# Eval("firstName") %>
@@ -187,15 +187,13 @@
                                     <td><%# Eval("gender") %></td>
                                     <td><%# Eval("TeacherName") %></td>
 
-                                    <td>
+                                    <td class="student-actions">
                                         <a class="btn btn-sm btn-primary" title="Edit"
-                                            href='admissionform.aspx?id=<%# Eval("id") %>'><i class="fas fa-edit"></i>
+                                            href='admissionform.aspx?id=<%# CryptoHelper.Encrypt(Eval("id").ToString()) %>' onclick="event.stopPropagation();"><i class="fas fa-edit"></i>
                                         </a>
                                         <a class="btn btn-sm btn-success ms-2" title="Add Student Details"
-                                            href='addstudentdetails.aspx?sid=<%# CryptoHelper.Encrypt(Eval("studentCode").ToString()) %>'><i class="fas fa-plus-circle"></i>
+                                            href='addstudentdetails.aspx?id=<%# CryptoHelper.Encrypt(Eval("id").ToString()) %>' onclick="event.stopPropagation();"><i class="fas fa-plus-circle"></i>
                                         </a>
-
-
                                     </td>
                                 </tr>
                             </ItemTemplate>
@@ -207,5 +205,49 @@
             </div>
         </div>
     </div>
+
+    <script type="text/javascript">
+        (function () {
+            function bindStudentRowClicks() {
+                var rows = document.querySelectorAll('#tblStudents tbody tr.student-row');
+                rows.forEach(function (row) {
+                    row.style.cursor = 'pointer';
+
+                    // prevent multiple handlers if called multiple times
+                    if (row.getAttribute('data-click-bound') === '1') return;
+                    row.setAttribute('data-click-bound', '1');
+
+                    row.addEventListener('click', function (e) {
+                        var t = e.target;
+                        if (t.closest && t.closest('a,button,input,select,textarea,label')) return;
+
+                        var url = row.getAttribute('data-details-url');
+                        if (url) window.location.href = url;
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bindStudentRowClicks);
+            } else {
+                bindStudentRowClicks();
+            }
+
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.DataTable) {
+                window.jQuery(function ($) {
+                    var table = $('#tblStudents');
+                    if ($.fn.DataTable.isDataTable(table)) {
+                        table.on('draw.dt', function () {
+                            // remove flag before rebind so newly rendered rows bind
+                            document.querySelectorAll('#tblStudents tbody tr.student-row').forEach(function (r) {
+                                r.removeAttribute('data-click-bound');
+                            });
+                            bindStudentRowClicks();
+                        });
+                    }
+                });
+            }
+        })();
+    </script>
 </asp:Content>
 

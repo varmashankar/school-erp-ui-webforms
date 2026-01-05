@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -10,6 +11,17 @@ using System.Threading.Tasks;
 
 public partial class Dashboard_admin_admissionform : System.Web.UI.Page
 {
+    private int? EditingStudentId
+    {
+        get
+        {
+            object o = ViewState["EditingStudentId"];
+            if (o == null) return null;
+            return (int)o;
+        }
+        set { ViewState["EditingStudentId"] = value; }
+    }
+
     protected async void Page_Load(object sender, EventArgs e)
     {
         if (Session["authToken"] == null)
@@ -22,8 +34,106 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
         if (!IsPostBack)
         {
             await LoadClassList();
+
+            // Edit mode: encrypted numeric id in querystring
+            string encId = Request.QueryString["id"];
+            if (!string.IsNullOrWhiteSpace(encId))
+            {
+                await InitEditMode(encId);
+                return;
+            }
+
+            // Create mode
             await LoadAdmissionIdFromApi();
             await LoadStudentIdFromApi();
+        }
+    }
+
+    private async Task InitEditMode(string encId)
+    {
+        string decrypted = CryptoHelper.Decrypt(encId);
+        int id;
+        if (!int.TryParse(decrypted, out id))
+        {
+            ShowMessage("Invalid student id.", "warning");
+            return;
+        }
+
+        EditingStudentId = id;
+
+        // Titles are optional (avoid compile issues if markup changes)
+        if (litPageTitle != null) litPageTitle.Text = "Edit Student";
+        if (litFormTitle != null) litFormTitle.Text = "Update Student";
+        if (btnSaveStep1 != null) btnSaveStep1.Text = "Update Student";
+
+        await LoadStudentForEdit(id);
+    }
+
+    private async Task LoadStudentForEdit(int id)
+    {
+        try
+        {
+            ApiResponse res = await ApiHelper.PostAsync("api/Students/getStudentDetails", new { id = id }, HttpContext.Current);
+
+            if (res == null)
+            {
+                ShowMessage("No response from server.", "danger");
+                return;
+            }
+
+            if (res.response_code != "200" || res.obj == null)
+            {
+                ShowMessage(res.obj == null ? "Unable to load student." : res.obj.ToString(), "warning");
+                return;
+            }
+
+            // API may return object or array; normalize
+            var json = JsonConvert.SerializeObject(res.obj);
+            JToken tok = JToken.Parse(json);
+            JObject student = tok.Type == JTokenType.Array ? (JObject)tok.First : (JObject)tok;
+
+            if (student == null)
+            {
+                ShowMessage("Student not found.", "warning");
+                return;
+            }
+
+            // Preserve codes (backend requires studentCode only for create)
+            hfStudentId.Value = student["studentCode"] == null ? "" : student["studentCode"].ToString();
+
+            // admissionNo may come as admissionNo or admission_no depending on API/SP mapping
+            string admissionNo = "";
+            if (student["admissionNo"] != null) admissionNo = student["admissionNo"].ToString();
+            else if (student["admission_no"] != null) admissionNo = student["admission_no"].ToString();
+            hfAdmissionId.Value = admissionNo ?? "";
+
+            txtFirstName.Text = student["firstName"] == null ? "" : student["firstName"].ToString();
+            txtMiddleName.Text = student["middleName"] == null ? "" : student["middleName"].ToString();
+            txtLastName.Text = student["lastName"] == null ? "" : student["lastName"].ToString();
+
+            txtDob.Text = student["dob"] == null ? "" : student["dob"].ToString();
+            ddlGender.SelectedValue = student["gender"] == null ? "" : student["gender"].ToString();
+            ddlBloodGroup.SelectedValue = student["bloodGroup"] == null ? "" : student["bloodGroup"].ToString();
+
+            txtNationality.Text = student["nationality"] == null ? "" : student["nationality"].ToString();
+            txtReligion.Text = student["religion"] == null ? "" : student["religion"].ToString();
+            txtAadhar.Text = student["nationIdNumber"] == null ? "" : student["nationIdNumber"].ToString();
+
+            txtEmail.Text = student["email"] == null ? "" : student["email"].ToString();
+            txtPhone.Text = student["phone"] == null ? "" : student["phone"].ToString();
+            txtAdmissionDate.Text = student["admissionDate"] == null ? "" : student["admissionDate"].ToString();
+
+            string classId = student["classId"] == null ? "" : student["classId"].ToString();
+            if (!string.IsNullOrWhiteSpace(classId) && ddlClass.Items.FindByValue(classId) != null)
+                ddlClass.SelectedValue = classId;
+
+            txtSiblingInfo.Text = student["siblingInfo"] == null ? "" : student["siblingInfo"].ToString();
+            txtAddress.Text = student["address"] == null ? "" : student["address"].ToString();
+            txtMedicalInfo.Text = student["medicalInfo"] == null ? "" : student["medicalInfo"].ToString();
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("Error loading student: " + ex.Message, "danger");
         }
     }
 
@@ -153,11 +263,37 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
                 return;
             }
 
+            bool isEdit = EditingStudentId.HasValue;
+
+            // IMPORTANT: On edit, do not send empty admissionNo (it can violate unique index in student_admissions)
+            string admissionNoToSend = hfAdmissionId.Value == null ? "" : hfAdmissionId.Value.Trim();
+            if (isEdit && string.IsNullOrWhiteSpace(admissionNoToSend))
+            {
+                ApiResponse existing = await ApiHelper.PostAsync("api/Students/getStudentDetails", new { id = EditingStudentId.Value }, HttpContext.Current);
+                if (existing != null && existing.response_code == "200" && existing.obj != null)
+                {
+                    try
+                    {
+                        var j = JsonConvert.SerializeObject(existing.obj);
+                        JToken t = JToken.Parse(j);
+                        JObject s = t.Type == JTokenType.Array ? (JObject)t.First : (JObject)t;
+                        if (s != null)
+                        {
+                            if (s["admissionNo"] != null) admissionNoToSend = Convert.ToString(s["admissionNo"]);
+                            else if (s["admission_no"] != null) admissionNoToSend = Convert.ToString(s["admission_no"]);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
             // Build student object EXACTLY as backend expects
             var student = new
             {
-                studentCode = hfStudentId.Value.Trim(),         // STU-YYYY-XXXX
-                admissionNo = hfAdmissionId.Value.Trim(),     // ADM-YYYY-XXXX
+                id = isEdit ? (int?)EditingStudentId.Value : null,
+
+                studentCode = hfStudentId.Value.Trim(),
+                admissionNo = admissionNoToSend,
 
                 firstName = txtFirstName.Text.Trim(),
                 middleName = txtMiddleName.Text.Trim(),
@@ -170,7 +306,7 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
                 nationIdNumber = txtAadhar.Text.Trim(),
                 email = txtEmail.Text.Trim(),
                 phone = txtPhone.Text.Trim(),
-                admissionDate = txtAdmissionDate.Text, // Correct spelling
+                admissionDate = txtAdmissionDate.Text,
 
                 classId = ddlClass.SelectedValue,
 
@@ -192,10 +328,56 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
 
             if (apiRes.response_code == "200")
             {
-                string sid = CryptoHelper.Encrypt(hfStudentId.Value.Trim()); // studentId just created
+                if (isEdit)
+                {
+                    string script = @"
+                    Swal.fire({
+                        title: 'Success',
+                        text: 'The student record has been updated successfully.',
+                        icon: 'success'
+                    }).then(() => { window.location = 'students.aspx'; });";
 
-                // SweetAlert with Yes/No
-                string script = @"
+                    ScriptManager.RegisterStartupScript(this, GetType(), "studentUpdateSuccess", script, true);
+                    return;
+                }
+
+                // Prefer DB numeric id returned by API for details page
+                string encStudentDbId = null;
+                try
+                {
+                    var json = JsonConvert.SerializeObject(apiRes.obj);
+                    dynamic obj = JsonConvert.DeserializeObject(json);
+                    if (obj != null && obj.id != null)
+                        encStudentDbId = CryptoHelper.Encrypt(Convert.ToString(obj.id));
+                }
+                catch { }
+
+                string createScript;
+                if (!string.IsNullOrWhiteSpace(encStudentDbId))
+                {
+                    createScript = @"
+                Swal.fire({
+                    title: 'Success',
+                    text: 'The student record has been saved successfully.',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Add Student Details',
+                    cancelButtonText: 'Add Another Student'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location = 'addstudentdetails.aspx?id=" + encStudentDbId + @"';
+                    } else {
+                        window.location = 'admissionform.aspx';
+                    }
+                });
+            ";
+                }
+                else
+                {
+                    // Fallback to old behavior if API didn't return id
+                    string sid = CryptoHelper.Encrypt(hfStudentId.Value.Trim());
+
+                    createScript = @"
                 Swal.fire({
                     title: 'Success',
                     text: 'The student record has been saved successfully.',
@@ -211,12 +393,24 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
                     }
                 });
             ";
+                }
 
-                ScriptManager.RegisterStartupScript(this, GetType(), "studentSuccess", script, true);
+                ScriptManager.RegisterStartupScript(this, GetType(), "studentSuccess", createScript, true);
             }
             else
             {
                 string message = apiRes.obj == null ? "Unknown error" : apiRes.obj.ToString();
+
+                // If API returns {message:"..."}, prefer that
+                try
+                {
+                    var json = JsonConvert.SerializeObject(apiRes.obj);
+                    dynamic obj = JsonConvert.DeserializeObject(json);
+                    if (obj != null && obj.message != null)
+                        message = Convert.ToString(obj.message);
+                }
+                catch { }
+
                 ShowMessage("Failed: " + message, "danger");
             }
 
@@ -226,7 +420,6 @@ public partial class Dashboard_admin_admissionform : System.Web.UI.Page
             ShowMessage("Error: " + ex.Message, "danger");
         }
     }
-
 
     // ---------------------------------------------
     // ALERT POPUP

@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" %>
+﻿<%@ Page Language="C#" Async="true" EnableEventValidation="true" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head runat="server">
@@ -191,9 +191,61 @@
                         <a href="#admissions" class="nav-link text-white font-medium">Admissions</a>
                         <a href="#news" class="nav-link text-white font-medium">News</a>
                         <a href="#contact" class="nav-link text-white font-medium">Contact</a>
-                        <button class="gradient-accent text-white px-6 py-2 rounded-full font-semibold hover:opacity-90 transition-opacity">
+
+                        <span class="w-px h-6 bg-white/30"></span>
+
+                        <!-- Login Dropdown -->
+                        <div class="relative" id="loginDropdown">
+                            <button type="button" class="flex items-center text-white/90 hover:text-yellow-400 text-sm font-medium transition-colors" onclick="toggleLoginDropdown(event)">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                                <i class="fas fa-chevron-down ml-1 text-xs transition-transform" id="loginChevron"></i>
+                            </button>
+                            <div id="loginDropdownMenu" class="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 opacity-0 invisible transform -translate-y-2 transition-all duration-200 z-50">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Sign in as</p>
+                                </div>
+                                <a href="login.aspx" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent hover:text-blue-800 transition-all">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-user-shield text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-sm">Administrator</span>
+                                        <p class="text-xs text-gray-500">School management</p>
+                                    </div>
+                                </a>
+                                <a href="teacher-login.aspx" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-transparent hover:text-green-800 transition-all">
+                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-chalkboard-teacher text-green-600 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-sm">Teacher</span>
+                                        <p class="text-xs text-gray-500">Class & grades</p>
+                                    </div>
+                                </a>
+                                <a href="#" class="flex items-center px-4 py-3 text-gray-400 cursor-not-allowed">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-user-graduate text-purple-400 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-sm">Student</span>
+                                        <p class="text-xs text-gray-400">Coming soon</p>
+                                    </div>
+                                </a>
+                                <a href="#" class="flex items-center px-4 py-3 text-gray-400 cursor-not-allowed">
+                                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-users text-orange-400 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-sm">Parent</span>
+                                        <p class="text-xs text-gray-400">Coming soon</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <a href="apply-now.aspx" class="gradient-accent text-white px-6 py-2 rounded-full font-semibold hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl">
                             Apply Now
-                        </button>
+                        </a>
                     </div>
                     
                     <!-- Mobile Menu Button -->
@@ -210,7 +262,7 @@
 
         <!-- Mobile Menu -->
         <div class="mobile-menu fixed top-0 right-0 w-80 h-full bg-slate-900 z-50 p-8" id="mobileMenu">
-            <button class="absolute top-6 right-6 text-white text-2xl" id="closeMenu">
+            <button class="absolute top-6 right-6 text-white text-2xl" id="closeMenu" type="button">
                 <i class="fas fa-times"></i>
             </button>
             <div class="mt-16 space-y-6">
@@ -220,9 +272,38 @@
                 <a href="#admissions" class="block text-white text-lg font-medium hover:text-yellow-400 transition-colors">Admissions</a>
                 <a href="#news" class="block text-white text-lg font-medium hover:text-yellow-400 transition-colors">News</a>
                 <a href="#contact" class="block text-white text-lg font-medium hover:text-yellow-400 transition-colors">Contact</a>
-                <button class="gradient-accent text-white px-6 py-3 rounded-full font-semibold w-full mt-8">
+
+                <div class="pt-6 border-t border-white/10">
+                    <p class="text-white/50 text-xs uppercase tracking-wider mb-4">Sign in as</p>
+                    <a href="login.aspx" class="flex items-center text-white hover:text-yellow-400 transition-colors mb-3">
+                        <div class="w-8 h-8 bg-blue-600/30 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-shield text-blue-400 text-sm"></i>
+                        </div>
+                        <span class="font-medium">Administrator</span>
+                    </a>
+                    <a href="teacher-login.aspx" class="flex items-center text-white hover:text-yellow-400 transition-colors mb-3">
+                        <div class="w-8 h-8 bg-green-600/30 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-chalkboard-teacher text-green-400 text-sm"></i>
+                        </div>
+                        <span class="font-medium">Teacher</span>
+                    </a>
+                    <div class="flex items-center text-white/40 mb-3 cursor-not-allowed">
+                        <div class="w-8 h-8 bg-purple-600/20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-user-graduate text-purple-400/50 text-sm"></i>
+                        </div>
+                        <span class="font-medium">Student <span class="text-xs">(soon)</span></span>
+                    </div>
+                    <div class="flex items-center text-white/40 cursor-not-allowed">
+                        <div class="w-8 h-8 bg-orange-600/20 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-users text-orange-400/50 text-sm"></i>
+                        </div>
+                        <span class="font-medium">Parent <span class="text-xs">(soon)</span></span>
+                    </div>
+                </div>
+
+                <a href="apply-now.aspx" class="gradient-accent text-white px-6 py-3 rounded-full font-semibold w-full mt-8 block text-center">
                     Apply Now
-                </button>
+                </a>
             </div>
         </div>
         
@@ -558,7 +639,7 @@
                         <h3 class="font-playfair text-2xl font-bold text-slate-800 mb-2">Request Information</h3>
                         <p class="text-gray-600 mb-8">Fill out the form below and our admissions team will contact you.</p>
                         
-                        <form class="space-y-6" id="inquiryForm">
+                        <div class="space-y-6" id="inquiryForm">
                             <div class="grid sm:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Parent/Guardian Name *</label>
@@ -607,7 +688,7 @@
                                     class="w-full gradient-accent text-white py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity">
                                 Submit Inquiry
                             </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -912,8 +993,8 @@
                                 <i class="fas fa-graduation-cap text-white text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="font-playfair font-bold text-xl">Westbrook</h3>
-                                <p class="text-xs text-gray-400 -mt-1">Academy</p>
+                                <h3 class="font-playfair font-bold text-xl"><asp:Literal ID="litFooterSchoolName" runat="server" Text="Westbrook" /></h3>
+                                <p class="text-xs text-gray-400 -mt-1"><asp:Literal ID="litFooterSchoolTag" runat="server" Text="Academy" /></p>
                             </div>
                         </div>
                         <p class="text-gray-400 mb-6">
@@ -1089,22 +1170,57 @@
             
             // Form Submission
             const inquiryForm = document.getElementById('inquiryForm');
-            inquiryForm.addEventListener('submit', (e) => {
-                e.preventDefault();
+            if (inquiryForm) {
+                inquiryForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    // Show success message (in production, this would submit to a server)
+                    const button = inquiryForm.querySelector('button[type="submit"]');
+                    const originalText = button.textContent;
+                    button.textContent = 'Submitted Successfully!';
+                    button.classList.add('bg-green-500');
+                    button.disabled = true;
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('bg-green-500');
+                        button.disabled = false;
+                        inquiryForm.reset();
+                    }, 3000);
+                });
+            }
+
+            // Login Dropdown Toggle
+            function toggleLoginDropdown(event) {
+                event.preventDefault();
+                event.stopPropagation();
                 
-                // Show success message (in production, this would submit to a server)
-                const button = inquiryForm.querySelector('button[type="submit"]');
-                const originalText = button.textContent;
-                button.textContent = 'Submitted Successfully!';
-                button.classList.add('bg-green-500');
-                button.disabled = true;
+                const menu = document.getElementById('loginDropdownMenu');
+                const chevron = document.getElementById('loginChevron');
+                const isOpen = !menu.classList.contains('invisible');
+
+                if (!isOpen) {
+                    menu.classList.remove('opacity-0', 'invisible', '-translate-y-2');
+                    menu.classList.add('opacity-100', 'visible', 'translate-y-0');
+                    chevron.style.transform = 'rotate(180deg)';
+                } else {
+                    menu.classList.add('opacity-0', 'invisible', '-translate-y-2');
+                    menu.classList.remove('opacity-100', 'visible', 'translate-y-0');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('loginDropdown');
+                const menu = document.getElementById('loginDropdownMenu');
+                const chevron = document.getElementById('loginChevron');
                 
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.classList.remove('bg-green-500');
-                    button.disabled = false;
-                    inquiryForm.reset();
-                }, 3000);
+                if (dropdown && !dropdown.contains(event.target)) {
+                    menu.classList.add('opacity-0', 'invisible', '-translate-y-2');
+                    menu.classList.remove('opacity-100', 'visible', 'translate-y-0');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
             });
             
             // Animate elements on scroll

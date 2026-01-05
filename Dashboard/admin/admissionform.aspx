@@ -11,7 +11,9 @@
 <asp:Content ID="Content2" ContentPlaceHolderID="pageTitle" runat="Server">
     <div class="d-flex align-items-center">
         <a href="students.aspx" class="btn btn-light btn-sm me-3"><i class="bi bi-arrow-left"></i> Back</a>
-        <h1 class="h4 mb-0 text-dark">Add New Student</h1>
+        <h1 class="h4 mb-0 text-dark">
+            <asp:Literal ID="litPageTitle" runat="server" Text="Add New Student" />
+        </h1>
     </div>
 </asp:Content>
 
@@ -19,7 +21,9 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white p-3">
-            <h5 class="mb-0 fw-bold">Create New Student</h5>
+            <h5 class="mb-0 fw-bold">
+                <asp:Literal ID="litFormTitle" runat="server" Text="Create New Student" />
+            </h5>
         </div>
 
         <div class="card-body p-4">

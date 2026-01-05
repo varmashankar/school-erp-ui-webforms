@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,45 +32,48 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
     {
         if (!IsPostBack)
         {
-            string raw = Request.QueryString["sid"];
+            string raw = Request.QueryString["id"];
 
-            if (!string.IsNullOrEmpty(raw))
+            int studentId;
+            if (!string.IsNullOrEmpty(raw) && int.TryParse(CryptoHelper.Decrypt(raw), out studentId))
             {
-                string sid = CryptoHelper.Decrypt(raw);
-
-                await LoadStudentMain(sid);
-                await LoadAllDetails(sid);
+                hfStudentId.Value = studentId.ToString();
+                await LoadStudentMain(studentId);
+                await LoadAllDetails(studentId);
             }
         }
 
     }
 
-    private async System.Threading.Tasks.Task LoadStudentMain(string sid)
+    private async System.Threading.Tasks.Task LoadStudentMain(int studentId)
     {
         ApiResponse res =
-            await ApiHelper.PostAsync("api/Students/getStudentDetails", new { student_code = sid }, HttpContext.Current);
+            await ApiHelper.PostAsync("api/Students/getStudentDetails", new { id = studentId }, HttpContext.Current);
 
         if (res != null && res.response_code == "200")
         {
             string json = JsonConvert.SerializeObject(res.obj);
             dynamic data = JsonConvert.DeserializeObject(json);
 
-            hfStudentId.Value = data.id;
-            lblStudentName.Text = data.firstName + " " + data.lastName;
-            lblSID.Text = data.studentCode;
+            // support array/object shape
+            if (data is Newtonsoft.Json.Linq.JArray && data.Count > 0) data = data[0];
+
+            hfStudentId.Value = Convert.ToString(data.id);
+            lblStudentName.Text = Convert.ToString(data.firstName) + " " + Convert.ToString(data.lastName);
+            lblSID.Text = Convert.ToString(data.studentCode);
             lblDOB.Text = Convert.ToString(data.dob).Split(' ')[0];
-            lblClass.Text = data.classId;
-            lblPhone.Text = data.phone;
+            lblClass.Text = Convert.ToString(data.classId);
+            lblPhone.Text = Convert.ToString(data.phone);
         }
 
     }
 
-    private async System.Threading.Tasks.Task LoadAllDetails(string sid)
+    private async System.Threading.Tasks.Task LoadAllDetails(int studentId)
     {
         // ------------------- PARENTS -------------------
         ApiResponse parentsRes =
             await ApiHelper.PostAsync("api/StudentParents/getStudentParents",
-                                      new { student_code = sid },
+                                      new { studentId = studentId },
                                       HttpContext.Current);
 
         if (parentsRes != null && parentsRes.response_code == "200")
@@ -86,7 +89,7 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
         // ------------------- EMERGENCY CONTACTS -------------------
         ApiResponse emergencyRes =
             await ApiHelper.PostAsync("api/EmergencyContacts/getStudentEmergencyContacts",
-                                      new { student_code = sid },
+                                      new { studentId = studentId },
                                       HttpContext.Current);
 
         if (emergencyRes != null && emergencyRes.response_code == "200")
@@ -101,7 +104,7 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
         // ------------------- PREVIOUS SCHOOL -------------------
         ApiResponse schoolRes =
             await ApiHelper.PostAsync("api/PreviousSchool/getStudentPreviousSchool",
-                                      new { student_code = sid },
+                                      new { studentId = studentId },
                                       HttpContext.Current);
 
         if (schoolRes != null && schoolRes.response_code == "200")
@@ -150,7 +153,9 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
                 chkGuardian.Checked = false;
                 txtParentRelation.Text = "";
 
-                await LoadAllDetails(hfStudentId.Value);
+                int sid;
+                if (int.TryParse(hfStudentId.Value, out sid))
+                    await LoadAllDetails(sid);
 
             }
             else
@@ -198,7 +203,9 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
                 txtECPhone.Text = "";
                 txtECRelation.Text = "";
 
-                await LoadAllDetails(hfStudentId.Value);
+                int sid;
+                if (int.TryParse(hfStudentId.Value, out sid))
+                    await LoadAllDetails(sid);
             }
             else
             {
@@ -245,7 +252,9 @@ public partial class Dashboard_admin_addstudentdetails : AuthenticatedPage
                 txtPrevClass.Text = "";
                 txtTCNo.Text = "";
 
-                await LoadAllDetails(hfStudentId.Value);
+                int sid;
+                if (int.TryParse(hfStudentId.Value, out sid))
+                    await LoadAllDetails(sid);
             }
             else
             {

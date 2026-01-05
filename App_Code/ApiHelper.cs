@@ -131,6 +131,98 @@ public static class ApiHelper
         }
     }
 
+    public static Task<ApiResponse> GetAsync(string relativeUrl)
+    {
+        return GetAsync(relativeUrl, HttpContext.Current);
+    }
+
+    public static async Task<ApiResponse> GetAsync(string relativeUrl, HttpContext context)
+    {
+        if (context == null)
+            context = HttpContext.Current;
+
+        Uri requestUri;
+        try
+        {
+            requestUri = BuildUri(relativeUrl);
+        }
+        catch
+        {
+            return new ApiResponse
+            {
+                response_code = "400",
+                obj = "Invalid API URL. Check API_BASE_URL and request path."
+            };
+        }
+
+        using (var request = new HttpRequestMessage(HttpMethod.Get, requestUri))
+        {
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            string token = TryGetTokenFromSession(context);
+            if (!string.IsNullOrEmpty(token))
+            {
+                TryAddHeader(request, TokenHeaderName, token);
+            }
+
+            HttpResponseMessage response;
+            try
+            {
+                response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            }
+            catch
+            {
+                return new ApiResponse
+                {
+                    response_code = "503",
+                    obj = "Unable to reach server. Please try again."
+                };
+            }
+
+            TryUpdateTokenFromResponse(context, response);
+
+            string respStr = response.Content == null ? null : await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            ApiResponse apiResp = null;
+            try
+            {
+                apiResp = JsonConvert.DeserializeObject<ApiResponse>(respStr);
+            }
+            catch
+            {
+                apiResp = null;
+            }
+
+            if (apiResp == null)
+            {
+                apiResp = new ApiResponse
+                {
+                    response_code = response.IsSuccessStatusCode ? "200" : ((int)response.StatusCode).ToString(),
+                    obj = string.IsNullOrEmpty(respStr) ? (object)null : respStr
+                };
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(apiResp.response_code))
+                    apiResp.response_code = response.IsSuccessStatusCode ? "200" : ((int)response.StatusCode).ToString();
+
+                if (apiResp.obj == null && !string.IsNullOrEmpty(respStr))
+                    apiResp.obj = respStr;
+            }
+
+            if (apiResp != null)
+            {
+                string code = (apiResp.response_code ?? string.Empty).Trim();
+                if (code == "215" || code == "401" || code == "403")
+                {
+                    TryClearToken(context);
+                }
+            }
+
+            return apiResp;
+        }
+    }
+
     private static Uri BuildUri(string relativeOrAbsoluteUrl)
     {
         if (string.IsNullOrWhiteSpace(relativeOrAbsoluteUrl))

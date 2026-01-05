@@ -1,11 +1,81 @@
 using Newtonsoft.Json;
 using System;
+using System.Data.SqlClient;
 using System.Web;
 using System.Web.UI;
 
 public partial class teacher_login : System.Web.UI.Page
 {
-    protected void Page_Load(object sender, EventArgs e) { }
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if (!IsPostBack)
+        {
+            LoadSchoolInfo();
+        }
+    }
+
+    private void LoadSchoolInfo()
+    {
+        try
+        {
+            var csSetting = System.Configuration.ConfigurationManager.ConnectionStrings["schoolerp"];
+            if (csSetting == null) return;
+            string cs = csSetting.ConnectionString;
+
+            using (SqlConnection con = new SqlConnection(cs))
+            {
+                string sql = "SELECT TOP 1 school_name, logo_path FROM dbo.schools WHERE deleted=0 AND status=1 ORDER BY id DESC";
+                using (SqlCommand cmd = new SqlCommand(sql, con))
+                {
+                    con.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            string name = dr["school_name"] != DBNull.Value ? Convert.ToString(dr["school_name"]) : string.Empty;
+                            string logo = dr["logo_path"] != DBNull.Value ? Convert.ToString(dr["logo_path"]) : string.Empty;
+
+                            // Set school name
+                            litSchoolName.Text = Server.HtmlEncode(name);
+                            litSchoolTag.Text = "Excellence in Education";
+
+                            // Resolve logo URL
+                            string resolvedLogoUrl = "assets/images/education.gif"; // fallback
+                            if (!string.IsNullOrEmpty(logo))
+                            {
+                                string appRelative = logo;
+                                if (!logo.StartsWith("~") && logo.StartsWith("/"))
+                                {
+                                    appRelative = "~" + logo;
+                                }
+                                try
+                                {
+                                    resolvedLogoUrl = ResolveUrl(appRelative);
+                                }
+                                catch
+                                {
+                                    // keep fallback
+                                }
+                            }
+
+                            // Set logo for both desktop and mobile
+                            imgLogo.ImageUrl = resolvedLogoUrl;
+                            imgLogo.AlternateText = name;
+                            imgLogoMobile.ImageUrl = resolvedLogoUrl;
+                            imgLogoMobile.AlternateText = name;
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("Error loading school info: " + ex.Message);
+            // Set defaults on error
+            imgLogo.ImageUrl = "assets/images/education.gif";
+            imgLogoMobile.ImageUrl = "assets/images/education.gif";
+        }
+    }
 
     protected async void btnLogin_Click(object sender, EventArgs e)
     {

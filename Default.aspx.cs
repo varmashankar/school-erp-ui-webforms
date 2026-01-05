@@ -37,51 +37,53 @@ public partial class _Default : System.Web.UI.Page
                             string email = dr["email"] != DBNull.Value ? Convert.ToString(dr["email"]) : string.Empty;
                             string logo = dr["logo_path"] != DBNull.Value ? Convert.ToString(dr["logo_path"]) : string.Empty;
 
-                            // Populate controls
-                            litSchoolName.Text = Server.HtmlEncode(name);
-                            litSchoolTag.Text = Server.HtmlEncode(""); // optional tagline if available
+                            // Populate header controls
+                            if (litSchoolName != null)
+                                litSchoolName.Text = Server.HtmlEncode(name);
+                            if (litSchoolTag != null)
+                                litSchoolTag.Text = Server.HtmlEncode("Excellence in Education");
 
+                            // Populate footer controls
+                            if (litFooterSchoolName != null)
+                                litFooterSchoolName.Text = Server.HtmlEncode(name);
+                            if (litFooterSchoolTag != null)
+                                litFooterSchoolTag.Text = Server.HtmlEncode("Academy");
+
+                            string resolvedLogoUrl = "https://via.placeholder.com/64x64?text=S";
                             if (!string.IsNullOrEmpty(logo))
                             {
                                 // Normalize stored path to an app-relative path if needed and resolve it
                                 string appRelative = logo;
                                 if (!logo.StartsWith("~") && logo.StartsWith("/"))
                                 {
-                                    appRelative = "~" + logo; // "/uploads/schools/x.png" -> "~/uploads/schools/x.png"
+                                    appRelative = "~" + logo;
                                 }
-                                // If logo is missing a leading slash and does not have a ~, assume it's already app-relative
                                 try
                                 {
-                                    imgLogo.ImageUrl = ResolveUrl(appRelative);
+                                    resolvedLogoUrl = ResolveUrl(appRelative);
                                 }
                                 catch
                                 {
-                                    // fallback to placeholder
-                                    imgLogo.ImageUrl = "https://via.placeholder.com/64x64?text=W";
+                                    // keep placeholder
                                 }
-
-                                imgLogo.AlternateText = name;
                             }
-                            else
+
+                            // Set header logo
+                            if (imgLogo != null)
                             {
-                                // fallback placeholder when no logo configured
-                                imgLogo.ImageUrl = "https://via.placeholder.com/64x64?text=W";
+                                imgLogo.ImageUrl = resolvedLogoUrl;
                                 imgLogo.AlternateText = name;
                             }
 
-                            hfPhone.Value = phone;
-                            hfEmail.Value = email;
+                            if (hfPhone != null)
+                                hfPhone.Value = phone;
+                            if (hfEmail != null)
+                                hfEmail.Value = email;
 
-                            // Also update contact card visible text via client script (safe-encoded)
-                            string safeAddress = address.Replace("\r\n", "\\n").Replace("'", "\\'");
-                            string safePhone = phone.Replace("'", "\\'");
-                            string safeEmail = email.Replace("'", "\\'");
-
-                            string script = "(function(){var addrEl = document.querySelectorAll('#contact .bg-slate-50 p')[0]; if(addrEl) addrEl.innerHTML = '" + safeAddress + "';" +
-                                            "var phoneEl = document.querySelectorAll('#contact .bg-slate-50 p')[1]; if(phoneEl) phoneEl.innerHTML = 'Main Office: " + safePhone + "<br/>Admissions: " + safePhone + "';" +
-                                            "var emailEl = document.querySelectorAll('#contact .bg-slate-50 p')[2]; if(emailEl) emailEl.innerHTML = 'General: " + safeEmail + "<br/>Admissions: " + safeEmail + "';})();";
-
-                            ClientScript.RegisterStartupScript(this.GetType(), "populateContact", script, true);
+                            // Update mailto link client-side (anchor isn't a server control)
+                            var emailForHref = (email ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+                            string script = "(function(){var a=document.getElementById('emailLink'); if(a){ a.href='mailto:' + \"" + emailForHref + "\"; }})();";
+                            ClientScript.RegisterStartupScript(this.GetType(), "populateMailto", script, true);
                         }
                     }
                 }
